@@ -8,6 +8,7 @@ interface Memo {
   deleted_at: string;
   updated_at: string;
   slug: string;
+  files;
 }
 
 
@@ -77,7 +78,15 @@ async function getMemos(isToday: boolean = false): Promise<Array<Memo>> {
         (memo) => new Date(memo.created_at).getDay() == new Date().getDay()
       );
     })
-  return data;
+  return data
+    .map((item) => {
+      let files = item.files ? item.files : [];
+      files.forEach((el) => {
+        item.content = item.content + ` ![](${el?.url})`;
+      });
+      return item;
+    })
+    .reverse();
 }
 
 //Inputs 5 numbered blocks when called
