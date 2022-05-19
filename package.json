@@ -1,0 +1,28 @@
+{
+  "name": "flomo_memos_sync",
+  "version": "0.0.1",
+  "description": "sync flomo memons",
+  "main": "dist/index.html",
+  "targets": {
+    "main": false
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "parcel build --no-source-maps index.html --public-url ./"
+  },
+  "keywords": [],
+  "author": "duiliuliu",
+  "license": "MIT",
+  "dependencies": {
+    "@logseq/libs": "0.0.6"
+  },
+  "logseq": {
+    "id": "flomo_memos_sync",
+    "title": "flomo_memos_sync",
+    "icon": "icon.png"
+  },
+  "devDependencies": {
+    "buffer": "^6.0.3",
+    "parcel": "^2.0.0"
+  }
+}
