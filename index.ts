@@ -111,13 +111,13 @@ async function insertSomeBlocks(e, isToday: boolean = false) {
     logseq.App.showMsg("please configuration session");
     return;
   }
+  await logseq.Editor.updateBlock(e.uuid, "🚀🚀🚀loadind...");
   let data: Array<IBatchBlock> = await loadDatas(isToday);
   if (data == null || data.length == 0) {
     logseq.App.showMsg("no memos update");
+    await logseq.Editor.updateBlock(e.uuid, "");
     return;
   }
-
-  await logseq.Editor.updateBlock(e.uuid, "🚀🚀🚀loadind...");
   await logseq.Editor.insertBatchBlock(e.uuid, data, { sibling: true });
 }
   
