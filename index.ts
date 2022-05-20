@@ -109,6 +109,7 @@ async function loadDatas(
 async function insertSomeBlocks(e, isToday: boolean = false) {
     if (logseq.settings?.session == null || logseq.settings?.session == "") {
       logseq.App.showMsg("请配置session");
+      return;
     }
     let data: Array<IBatchBlock> = await loadDatas(isToday);
     if(data == null || data.length==0){
