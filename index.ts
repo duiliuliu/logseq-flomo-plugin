@@ -137,51 +137,39 @@ const main = async () => {
   });
   
   logseq.provideStyle(`
-      /* === flomo ☘️.memo ====*/
-      div[data-refs-self*="☘️.memo"] {
-        margin: 20px 0;
-        background: rgb(248, 253, 247);
-        padding: 20px 0;
-        border-radius: 10px;
-      }
-      div[data-refs-self*="☘️.memo"]:hover {
-        box-shadow: 0px 2px 16px #dddddd;
-      }
-      div[data-refs-self*="☘️.memo"]
-        > .block-children-container.flex
-        > .block-children {
-        color: #323232;
-        font-size: 14px;
-      }
-      div[data-refs-self*="☘️.memo"]
-        > .block-children-container.flex
-        > .block-children
-        > div.ls-block {
-        line-height: 1.8;
-        min-height: 20px;
-        margin: 0;
-      }
-      a.tag[data-ref*="☘️.memo"]:before {
-        content: "☘️";
-        font-size: 0.75rem;
-        line-height: 0.75rem;
-      }
-      a.tag[data-ref*="☘️.memo"]:hover:before {
-        padding-right: 0.3rem;
-      }
-      a.tag[data-ref*="☘️.memo"]:hover {
-        font-size: 0.75rem;
-        line-height: 0.75rem;
-      }
-      a.tag[data-ref*="☘️.memo"] {
-        font-size: 0px;
-        font-family: iosevka, fira code, consolas, source code pro;
-        color: #61f825;
-        background-color: #e5f7ed;
-        border: 0.5px solid #fcfff5;
-        border-radius: 5px;
-        padding: 0 1px;
-      }  
+ 
+/** 隐藏memo图标 */
+a.tag[data-ref*="☘️.memo"]:before {
+  content: "☘️";
+  font-size: 0.75rem;
+  line-height: 0.75rem;
+}
+a.tag[data-ref*="☘️.memo"]:hover:before {
+  padding-right: 0.3rem;
+}
+a.tag[data-ref*="☘️.memo"]:hover {
+  content: "";
+  font-size: 0.75rem;
+  line-height: 0.75rem;
+}
+a.tag[data-ref*="☘️.memo"] {
+  font-size: 0px;
+  font-family: iosevka, fira code, consolas, source code pro;
+  color: #61f825;
+  background-color: #e5f7ed;
+  border: 0.5px solid #fcfff5;
+  border-radius: 5px;
+  padding: 0 1px;
+}
+
+div[data-refs-self*="☘️.memo"] .block-properties {
+  font-size: 10px;
+  border-radius: 5px;
+  padding: 0 1px;
+  margin: 0px;
+  background-color: var(--ls-block-properties-background-color, #f0f8ff);
+}
+
   `);
 }
 
