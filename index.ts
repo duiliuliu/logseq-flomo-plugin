@@ -93,7 +93,7 @@ async function loadDatas(
       return {
         content: `#☘️.memo ${item.content}`,
         properties: {
-          memo_link: `https://flomoapp.com/mine/?memo_id=${memo.slug}`,
+          memo_link: `https://flomoapp.com/mine/?memo_id=${item.slug}`,
           "created-at": new Date(item.created_at).getTime(),
           "updated-at": new Date(item.updated_at).getTime(),
           "deleted-at": item.deleted_at
@@ -107,16 +107,18 @@ async function loadDatas(
 
 //Inputs 5 numbered blocks when called
 async function insertSomeBlocks(e, isToday: boolean = false) {
-    if (logseq.settings?.session == null || logseq.settings?.session == "") {
-      logseq.App.showMsg("请配置session");
-      return;
-    }
-    let data: Array<IBatchBlock> = await loadDatas(isToday);
-    if(data == null || data.length==0){
-      return;
-    }
-    logseq.Editor.updateBlock(e.uuid, "🚀🚀🚀loadind...");
-    logseq.Editor.insertBatchBlock(e.uuid, data, { sibling: true });
+  if (logseq.settings?.session == null || logseq.settings?.session == "") {
+    logseq.App.showMsg("please configuration session");
+    return;
+  }
+  let data: Array<IBatchBlock> = await loadDatas(isToday);
+  if (data == null || data.length == 0) {
+    logseq.App.showMsg("no memos update");
+    return;
+  }
+
+  await logseq.Editor.updateBlock(e.uuid, "🚀🚀🚀loadind...");
+  await logseq.Editor.insertBatchBlock(e.uuid, data, { sibling: true });
 }
   
 
