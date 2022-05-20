@@ -1,5 +1,5 @@
 import '@logseq/libs';
-import { SettingSchemaDesc } from '@logseq/libs/dist/LSPlugin';
+import { SettingSchemaDesc,IBatchBlock } from '@logseq/libs/dist/LSPlugin';
 
 interface Memo {
   content: string;
@@ -10,7 +10,6 @@ interface Memo {
   slug: string;
   files;
 }
-
 
 /**  配置化   */
 const pluginName = ["{{% plugin-name %}}", "{{% plugin-title %}}"]
@@ -60,13 +59,15 @@ function getSettingTemp(lang: string) {
 
 
 /** 拉取 flomo memos */
-async function getMemos(isToday: boolean = false): Promise<Array<Memo>> {
-  const session = logseq.settings?.session;
-  const offset = logseq.settings?.offset;
-  const limit = isToday ? 20 : logseq.settings?.limit;
-  const tag = logseq.settings?.tag;
+async function loadDatas(
+  isToday: boolean = false
+): Promise<Array<IBatchBlock>> {
+  let session = logseq.settings?.session;
+  let offset = logseq.settings?.offset;
+  let limit = isToday ? 20 : logseq.settings?.limit;
+  let tag = logseq.settings?.tag;
 
-  const data = await fetch(
+  let data = await fetch(
     `https://duiliuliu.vercel.app/api/flomo?tag=${tag}&offset=${offset}&tz=8:0&limit=${limit}&flomo_session=${session}`
   )
     .then((response) => response.json())
@@ -78,64 +79,56 @@ async function getMemos(isToday: boolean = false): Promise<Array<Memo>> {
         (memo) => new Date(memo.created_at).getDay() == new Date().getDay()
       );
     })
+    .catch((e) => {
+      logseq.App.showMsg(e);
+      return [];
+    });
+
   return data
     .map((item) => {
       let files = item.files ? item.files : [];
       files.forEach((el) => {
-        item.content = item.content + ` ![](${el?.url})`;
+        item.content = item.content + ` ![flomo image](${el?.url})`;
       });
-      return item;
+      return {
+        content: `#☘️.memo ${item.content}`,
+        properties: {
+          memo_link: `https://flomoapp.com/mine/?memo_id=${memo.slug}`,
+          "created-at": new Date(item.created_at).getTime(),
+          "updated-at": new Date(item.updated_at).getTime(),
+          "deleted-at": item.deleted_at
+            ? new Date(item.deleted_at).getTime()
+            : "",
+        },
+      };
     })
     .reverse();
 }
 
 //Inputs 5 numbered blocks when called
 async function insertSomeBlocks(e, isToday: boolean = false) {
-  console.log("Open the calendar!");
-
-  /** 过度 */
-  logseq.Editor.updateBlock(e.uuid, '[:i "loadind..☘️..☘️..☘️."]');
-
-    try {
-      let memos: Array<Memo> = await getMemos(isToday);
-      memos.forEach((memo) => {
-        let blockProp = {
-          memo_link: `https://flomoapp.com/mine/?memo_id=${memo.slug}`,
-          "created-at": new Date(memo.created_at).getTime(),
-          "updated-at": new Date(memo.updated_at).getTime(),
-          "deleted-at": memo.deleted_at
-            ? new Date(memo.deleted_at).getTime()
-            : "",
-        };
-        logseq.Editor.insertBlock(e.uuid, `#☘️.memo ${memo.content}`, {
-          sibling: true,
-          properties: blockProp,
-        });
-      });
-      /** 结束过渡 */
-      logseq.Editor.updateBlock(e.uuid, "");
-    } catch (error) {
-      logseq.App.showMsg(error);
+    if (logseq.settings?.session == null || logseq.settings?.session == "") {
+      logseq.App.showMsg("请配置session");
     }
-
+    let data: Array<IBatchBlock> = await loadDatas(isToday);
+    if(data == null || data.length==0){
+      return;
+    }
+    logseq.Editor.updateBlock(e.uuid, "🚀🚀🚀loadind...");
+    logseq.Editor.insertBatchBlock(e.uuid, data, { sibling: true });
 }
   
 
 const main = async () => {
   console.log(`Plugin: ${pluginName[1]} loaded`);
-
   const { preferredLanguage: lang } = await logseq.App.getUserConfigs()
-
   logseq.useSettingsSchema(getSettingTemp(lang));
-
   logseq.Editor.registerSlashCommand("memo", async (e) => {
     insertSomeBlocks(e);
   });
-
   logseq.Editor.registerSlashCommand("memoToday", async (e) => {
     insertSomeBlocks(e, true);
   });
-  
   logseq.provideStyle(`
  
 /** 隐藏memo图标 */
