@@ -7,6 +7,9 @@
 session 必须配置
 ![setting](./images/setting.png)
 
+session 获取方式 --> web cookie中截取session值
+
+
 ## 使用
 
 `/memo` 按照配置同步当前 flomo 笔记
@@ -18,3 +21,4 @@ session 必须配置
 - [flomo 请求代理](https://github.com/duiliuliu/flomo-api-proxy/blob/main/pages/api/flomo.js)
 - [logseq 插件模板](https://github.com/QWxleA/logseq-plugin-starter-template)
 
+- **session 过期会导致拉取不到数据；** 遇到拉取不到数据问题时，请尝试更新session数据
