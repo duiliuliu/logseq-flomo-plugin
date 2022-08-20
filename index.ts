@@ -1,5 +1,5 @@
 import '@logseq/libs';
-import { SettingSchemaDesc } from '@logseq/libs/dist/LSPlugin';
+import { SettingSchemaDesc,IBatchBlock } from '@logseq/libs/dist/LSPlugin';
 
 interface Memo {
   content: string;
@@ -8,8 +8,8 @@ interface Memo {
   deleted_at: string;
   updated_at: string;
   slug: string;
+  files;
 }
-
 
 /**  配置化   */
 const pluginName = ["{{% plugin-name %}}", "{{% plugin-title %}}"]
@@ -59,13 +59,15 @@ function getSettingTemp(lang: string) {
 
 
 /** 拉取 flomo memos */
-async function getMemos(isToday: boolean = false): Promise<Array<Memo>> {
-  const session = logseq.settings?.session;
-  const offset = logseq.settings?.offset;
-  const limit = isToday ? 20 : logseq.settings?.limit;
-  const tag = logseq.settings?.tag;
+async function loadDatas(
+  isToday: boolean = false
+): Promise<Array<IBatchBlock>> {
+  let session = logseq.settings?.session;
+  let offset = logseq.settings?.offset;
+  let limit = isToday ? 20 : logseq.settings?.limit;
+  let tag = logseq.settings?.tag;
 
-  const data = await fetch(
+  let data = await fetch(
     `https://duiliuliu.vercel.app/api/flomo?tag=${tag}&offset=${offset}&tz=8:0&limit=${limit}&flomo_session=${session}`
   )
     .then((response) => response.json())
@@ -77,102 +79,93 @@ async function getMemos(isToday: boolean = false): Promise<Array<Memo>> {
         (memo) => new Date(memo.created_at).getDay() == new Date().getDay()
       );
     })
-  return data;
+    .catch((e) => {
+      logseq.App.showMsg(e);
+      return [];
+    });
+
+  return data
+    .map((item) => {
+      let files = item.files ? item.files : [];
+      files.forEach((el) => {
+        item.content = item.content + ` ![flomo image](${el?.url})`;
+      });
+      return {
+        content: `#☘️.memo ${item.content}`,
+        properties: {
+          memo_link: `https://flomoapp.com/mine/?memo_id=${item.slug}`,
+          "created-at": new Date(item.created_at).getTime(),
+          "updated-at": new Date(item.updated_at).getTime(),
+          "deleted-at": item.deleted_at
+            ? new Date(item.deleted_at).getTime()
+            : "",
+        },
+      };
+    })
+    .reverse();
 }
 
 //Inputs 5 numbered blocks when called
 async function insertSomeBlocks(e, isToday: boolean = false) {
-  console.log("Open the calendar!");
-
-  /** 过度 */
-  logseq.Editor.updateBlock(e.uuid, '[:i "loadind..☘️..☘️..☘️."]');
-
-    try {
-      let memos: Array<Memo> = await getMemos(isToday);
-      memos.forEach((memo) => {
-        let blockProp = {
-          memo_link: `https://flomoapp.com/mine/?memo_id=${memo.slug}`,
-          "created-at": new Date(memo.created_at).getTime(),
-          "updated-at": new Date(memo.updated_at).getTime(),
-          "deleted-at": memo.deleted_at
-            ? new Date(memo.deleted_at).getTime()
-            : "",
-        };
-        logseq.Editor.insertBlock(e.uuid, `#☘️.memo ${memo.content}`, {
-          sibling: true,
-          properties: blockProp,
-        });
-      });
-      /** 结束过渡 */
-      logseq.Editor.updateBlock(e.uuid, "");
-    } catch (error) {
-      logseq.App.showMsg(error);
-    }
-
+  if (logseq.settings?.session == null || logseq.settings?.session == "") {
+    logseq.App.showMsg("please configuration session");
+    return;
+  }
+  await logseq.Editor.updateBlock(e.uuid, "🚀🚀🚀loadind...");
+  let data: Array<IBatchBlock> = await loadDatas(isToday);
+  if (data == null || data.length == 0) {
+    logseq.App.showMsg("no memos update");
+    await logseq.Editor.updateBlock(e.uuid, "");
+    return;
+  }
+  await logseq.Editor.insertBatchBlock(e.uuid, data, { sibling: true });
 }
   
 
 const main = async () => {
   console.log(`Plugin: ${pluginName[1]} loaded`);
-
   const { preferredLanguage: lang } = await logseq.App.getUserConfigs()
-
   logseq.useSettingsSchema(getSettingTemp(lang));
-
   logseq.Editor.registerSlashCommand("memo", async (e) => {
     insertSomeBlocks(e);
   });
-
   logseq.Editor.registerSlashCommand("memoToday", async (e) => {
     insertSomeBlocks(e, true);
   });
-  
   logseq.provideStyle(`
-      /* === flomo ☘️.memo ====*/
-      div[data-refs-self*="☘️.memo"] {
-        margin: 20px 0;
-        background: rgb(248, 253, 247);
-        padding: 20px 0;
-        border-radius: 10px;
-      }
-      div[data-refs-self*="☘️.memo"]:hover {
-        box-shadow: 0px 2px 16px #dddddd;
-      }
-      div[data-refs-self*="☘️.memo"]
-        > .block-children-container.flex
-        > .block-children {
-        color: #323232;
-        font-size: 14px;
-      }
-      div[data-refs-self*="☘️.memo"]
-        > .block-children-container.flex
-        > .block-children
-        > div.ls-block {
-        line-height: 1.8;
-        min-height: 20px;
-        margin: 0;
-      }
-      a.tag[data-ref*="☘️.memo"]:before {
-        content: "☘️";
-        font-size: 0.75rem;
-        line-height: 0.75rem;
-      }
-      a.tag[data-ref*="☘️.memo"]:hover:before {
-        padding-right: 0.3rem;
-      }
-      a.tag[data-ref*="☘️.memo"]:hover {
-        font-size: 0.75rem;
-        line-height: 0.75rem;
-      }
-      a.tag[data-ref*="☘️.memo"] {
-        font-size: 0px;
-        font-family: iosevka, fira code, consolas, source code pro;
-        color: #61f825;
-        background-color: #e5f7ed;
-        border: 0.5px solid #fcfff5;
-        border-radius: 5px;
-        padding: 0 1px;
-      }  
+ 
+/** 隐藏memo图标 */
+a.tag[data-ref*="☘️.memo"]:before {
+  content: "☘️";
+  font-size: 0.75rem;
+  line-height: 0.75rem;
+}
+a.tag[data-ref*="☘️.memo"]:hover:before {
+  padding-right: 0.3rem;
+}
+a.tag[data-ref*="☘️.memo"]:hover {
+  content: "";
+  font-size: 0.75rem;
+  line-height: 0.75rem;
+}
+a.tag[data-ref*="☘️.memo"] {
+  font-size: 0px;
+  font-family: iosevka, fira code, consolas, source code pro;
+  color: #61f825;
+  background-color: #e5f7ed;
+  border: 0.5px solid #fcfff5;
+  border-radius: 5px;
+  padding: 0 1px;
+}
+
+div[data-refs-self*="☘️.memo"] .block-properties {
+  font-size: 10px;
+  border-radius: 5px;
+  padding: 0 1px;
+  margin: 0px;
+  background-color: var(--ls-block-properties-background-color, #f0f8ff);
+}
+
   `);
 }
 
